@@ -69,22 +69,23 @@ var app = http.createServer(function(req,res){
             var title = 'WEB - Create';
             var list = templist(filelist);
             var template = html(title,list
-            ,` <form action="/create_process" method="POST"> 
-            <p><input type="text" name="title" placeholder="title"></p>
-            <P>
-                <textarea name="description" placeholder="description"></textarea>            
-            </P>
-            <p>
-                <input type="submit">
-            </p>
-            </form>`
-            ,'');
+                                ,` <form action="/create_process" method="POST"> 
+                                        <p><input type="text" name="title" placeholder="title"></p>
+                                        <P>
+                                            <textarea name="description" placeholder="description"></textarea>            
+                                        </P>
+                                        <p>
+                                            <input type="submit">
+                                        </p>
+                                    </form>`
+                                ,'');
             
             res.writeHead(200);
             res.end(template);
         })
     } else if(pathname == '/create_process'){
         var body ='';
+        
         req.on('data',function(data){ //data는 객체 형식
             body += data;
         });
@@ -98,25 +99,24 @@ var app = http.createServer(function(req,res){
                 res.end();
             });    
         });
-    } else if(pathname == '/update'){
 
+    } else if(pathname == '/update'){
         fs.readdir('./file',function(err,filelist){
             var list = templist(filelist);
             fs.readFile(`./file/${queryData.id}`,'utf8', function(err,description){
             var title = queryData.id;
-            var template = html(title,list,`
-                <form action="/update_process" method="POST">
-                <input type="hidden" name="id" value="${title}"? 
-                <p><input type="text" name="title" placeholder="title" value="${title}"></p>
-                <P>
-                    <textarea name="description" placeholder="description">${description}</textarea>            
-                </P>
-                <p>
-                    <input type="submit">
-                </p>
-                </form>
-            `
-            ,`<a href='/create'>Create</a> <a href='/update?id=${title}'>Update</a>`);
+            var template = html(title,list
+                                ,` <form action="/update_process" method="POST">
+                                    <input type="hidden" name="id" value="${title}"? 
+                                    <p><input type="text" name="title" placeholder="title" value="${title}"></p>
+                                    <P>
+                                        <textarea name="description" placeholder="description">${description}</textarea>            
+                                    </P>
+                                    <p>
+                                        <input type="submit">
+                                    </p>
+                                 </form>`
+                                ,`<a href='/create'>Create</a> <a href='/update?id=${title}'>Update</a>`);
 
             res.writeHead(200);
             res.end(template);
