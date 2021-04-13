@@ -3,7 +3,7 @@ var fs = require('fs'); //fs module
 var url = require('url');
 var qs = require('querystring'); //querystring 값 
 
-function html(title,list,body){
+function html(title,list,body,control){
     return `
         <!doctype html>
         <html>
@@ -14,7 +14,7 @@ function html(title,list,body){
         <body>
             <h1><a href="/">WEB</a></h1>
             ${list}
-            <a href='/create'>Create</a>
+            ${control}
             ${body}
         </body>
         </html>
@@ -44,8 +44,9 @@ var app = http.createServer(function(req,res){
                 var title = 'Welcome';
                 var description = 'Hello, Node.js';
                 var list = templist(filelist);
-                var template = html(title,list,`<h2>${title}</h2><p>${description}</p>`);
-                
+                var template = html(title,list
+                                    ,`<h2>${title}</h2><p>${description}</p>`
+                                    ,`<a href='/create'>Create</a>`);
                 res.writeHead(200);
                 res.end(template);
             });
@@ -55,28 +56,29 @@ var app = http.createServer(function(req,res){
                 var list = templist(filelist);
                 fs.readFile(`./file/${queryData.id}`,'utf8', function(err,description){
                 var title = queryData.id;
-                var template = html(title,list,`<h2>${title}</h2><p>${description}</p>`);
+                var template = html(title,list,`<h2>${title}</h2><p>${description}</p>`
+                                    ,`<a href='/create'>Create</a> <a href='/update?id=${title}'>Update</a>`);
   
                 res.writeHead(200);
                 res.end(template);
-            });  
-    
+                });  
             });
-        
         }
     } else if(pathname == '/create') {
         fs.readdir('./file',function(error,filelist){
             var title = 'WEB - Create';
             var list = templist(filelist);
             var template = html(title,list
-            ,` <form action="http://localhost:3000/create_process" method="POST"> 
-            <p><input type="text" name="title" placeholder="title1"></p>
+            ,` <form action="/create_process" method="POST"> 
+            <p><input type="text" name="title" placeholder="title"></p>
             <P>
                 <textarea name="description" placeholder="description"></textarea>            
             </P>
-            <p><input type="submit"></p>
+            <p>
+                <input type="submit">
+            </p>
             </form>`
-            );
+            ,'');
             
             res.writeHead(200);
             res.end(template);
@@ -88,13 +90,56 @@ var app = http.createServer(function(req,res){
         });
         req.on('end',function(){
             var post = qs.parse(body);
-            var tilte = post.title;
+            var title = post.title;
             var description = post.description;
-            console.log(post.title);    
+            fs.writeFile(`./file/${title}`,description,'utf8',function(err){
+                //page redirect 
+                res.writeHead(302, {Location: `./?id=${title}`});
+                res.end();
+            });    
         });
+    } else if(pathname == '/update'){
 
-        res.writeHead(200);
-        res.end('success');
+        fs.readdir('./file',function(err,filelist){
+            var list = templist(filelist);
+            fs.readFile(`./file/${queryData.id}`,'utf8', function(err,description){
+            var title = queryData.id;
+            var template = html(title,list,`
+                <form action="/update_process" method="POST">
+                <input type="hidden" name="id" value="${title}"? 
+                <p><input type="text" name="title" placeholder="title" value="${title}"></p>
+                <P>
+                    <textarea name="description" placeholder="description">${description}</textarea>            
+                </P>
+                <p>
+                    <input type="submit">
+                </p>
+                </form>
+            `
+            ,`<a href='/create'>Create</a> <a href='/update?id=${title}'>Update</a>`);
+
+            res.writeHead(200);
+            res.end(template);
+            });  
+        });
+    } else if(pathname == '/update_process'){
+        var body ='';
+        req.on('data',function(data){ //data는 객체 형식
+            body += data;
+        });
+        req.on('end',function(){
+            var post = qs.parse(body);
+            var id = post.id;
+            var title = post.title;
+            var description = post.description;
+            fs.rename(`./file/${id}`, `./file/${title}`,function(){ //파일 이름을 변경 후
+                fs.writeFile(`./file/${title}`,description,'utf8',function(err){ //해당 이름의 파일에 내용을 저장 
+                    //page redirect 
+                    res.writeHead(302, {Location: `./?id=${title}`});
+                    res.end();
+                });   
+            });
+        });    
     }
     else {
         res.writeHead(404);
