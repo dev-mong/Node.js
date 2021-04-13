@@ -3,6 +3,8 @@ var fs = require('fs'); //fs module
 var url = require('url');
 var qs = require('querystring'); //querystring 값 
 
+
+
 function html(title,list,body,control){
     return `
         <!doctype html>
@@ -57,7 +59,14 @@ var app = http.createServer(function(req,res){
                 fs.readFile(`./file/${queryData.id}`,'utf8', function(err,description){
                 var title = queryData.id;
                 var template = html(title,list,`<h2>${title}</h2><p>${description}</p>`
-                                    ,`<a href='/create'>Create</a> <a href='/update?id=${title}'>Update</a>`);
+                                    ,`<a href='/create'>Create</a> 
+                                      <a href='/update?id=${title}'>Update</a>
+                                      <form action="/delete_process" name="form">
+                                        <input type="hidden" name="id" value="${title}">
+                                        <input type="submit" value="Delete" ">
+                                      </form>
+                                      `
+                                    );
   
                 res.writeHead(200);
                 res.end(template);
@@ -138,6 +147,19 @@ var app = http.createServer(function(req,res){
                     res.writeHead(302, {Location: `./?id=${title}`});
                     res.end();
                 });   
+            });
+        });    
+    } else if(pathname == '/delete_process'){
+        var body ='';
+        req.on('data',function(data){ //data는 객체 형식
+            body += data;
+        });
+        req.on('end',function(){
+            var post = qs.parse(body);
+            var id = post.id;
+            fs.unlink(`./file/${id}`,function(err){
+                res.writeHead(302, {Location: `/`});
+                res.end();
             });
         });    
     }
